@@ -1,0 +1,9 @@
+You: hi
+Chariklo: Hi there!
+
+You: i heard you might be able to help me
+Chariklo: Hey there. I'm ready to help however I can.
+
+You: i'm feeling down.
+Chariklo: I hear you. Can you say more about what you're experiencing right now, in this moment?
+

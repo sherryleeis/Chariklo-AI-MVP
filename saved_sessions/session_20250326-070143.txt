@@ -1,0 +1,6 @@
+You: hi
+Chariklo: Hi there!
+
+You: i heard you might be able to help me
+Chariklo: Hey there. I'm ready to help however I can.
+
