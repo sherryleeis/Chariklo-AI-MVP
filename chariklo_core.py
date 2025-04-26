@@ -1,36 +1,41 @@
+# chariklo_core.py
+# Refactored for clarity, presence, and graceful flow
+
 from typing import Dict, Optional
 import os
-import re
+from anthropic import Anthropic
+from dotenv import load_dotenv  
+import re  # for normalize_text in cue matching
+from chariklo_system_prompt import SYSTEM_PROMPT
+import time
+import random
 import json
 import logging
-from anthropic import Anthropic
-from dotenv import load_dotenv
-from chariklo_system_prompt import SYSTEM_PROMPT
+
+def normalize_text(text):
+    return re.sub(r"[^\w\s]", "", text.lower().strip())
+
+
+# ─── Logging Configuration ─────────────────────────────
+# ─── Logging Configuration ─────────────────────────────
+# Silence Claude SDK logs
+logging.getLogger("anthropic").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
+# Optional: Configure your own named logger
+chariklo_logger = logging.getLogger("chariklo")
+chariklo_logger.setLevel(logging.DEBUG)  # Set to DEBUG to see debug messages
+
+# Chariklo Modules
 from chariklo_loop_detection import CharikloLoopDetection
 from chariklo_patterns import state_patterns, thought_patterns
 from chariklo_tone import ToneFilter
 from chariklo_stuckness import StucknessHandler
 
-# Normalize text
-def normalize_text(text):
-    return re.sub(r"[^\w\s]", "", text.lower().strip())
-
-# Logging Configuration
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.getLogger("anthropic").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-chariklo_logger = logging.getLogger("chariklo")
-chariklo_logger.setLevel(getattr(logging, log_level, logging.INFO))
-
 # Load Memory Bank
-try:
-    with open('chariklo_memory_bank.json', 'r') as f:
-        memory_bank = json.load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("❌ ERROR: Memory bank file 'chariklo_memory_bank.json' not found!")
-except json.JSONDecodeError:
-    raise ValueError("❌ ERROR: Memory bank file is not a valid JSON!")
+with open('chariklo_memory_bank.json', 'r') as f:
+    memory_bank = json.load(f)
 
 # Load API Environment
 load_dotenv()
@@ -39,11 +44,10 @@ if not api_key:
     raise ValueError("❌ ERROR: Anthropic API Key not found. Check your .env file!")
 
 model_name = os.getenv("CLAUDE_MODEL", "claude-3-opus-20240229")
-if not model_name:
-    raise ValueError("❌ ERROR: Claude model name not found. Check your .env file!")
 
-# Initialize Claude Client
+# ✅ New Claude 3 client
 client = Anthropic(api_key=api_key)
+
 
 class CharikloCore:
     def __init__(self):
@@ -54,13 +58,74 @@ class CharikloCore:
         self.stuckness_handler = StucknessHandler()
 
     def detect_user_accepts_sound(self, user_input: str, sound_type: str = "bell") -> bool:
-        patterns = {
-            "bell": r"(bell|ring|okay|sure|yes|please|yes please|go ahead|let's do it|awesome)",
-            "rain": r"(rain|ring|okay|sure|yes|please|yes please|go ahead|let's do it|awesome)",
-            "ocean": r"(ocean|ring|okay|sure|yes|please|yes please|go ahead|let's do it|awesome)",
+        """Enhanced detection of user acceptance for sound offerings"""
+        # Core affirmative words - avoid matching these in exit responses
+        affirmatives = (
+            r"\b(okay|ok|sure|yes|please|yeah|yep|good|alright|fine|"
+            r"definitely|absolutely|right|mhm|mm|mhmm|k)\b"
+        )
+        
+        # Sound-specific patterns
+        affirmative_patterns = {
+            "bell": affirmatives,
+            "rain": f"(\brain\b|{affirmatives})",
+            "ocean": f"(\bocean\b|{affirmatives})"
         }
-        pattern = patterns.get(sound_type.lower())
-        return bool(re.search(pattern, user_input.lower())) if pattern else False
+        
+        pattern = affirmative_patterns.get(sound_type.lower())
+        if not pattern:
+            return False
+            
+        # Clean and check the input
+        user_input_clean = user_input.lower().strip()
+        
+        # Skip if this is an exit response containing thanks
+        if "thank" in user_input_clean and any(word in user_input_clean for word in ["helped", "better", "helpful"]):
+            return False
+            
+        # Check for affirmative response
+        return bool(re.search(pattern, user_input_clean))
+
+    def detect_match(self, input_text: str, memory_fragment: dict) -> bool:
+        """Enhanced semantic matching with prioritized exit handling"""
+        input_clean = input_text.lower().strip()
+        input_tokens = set(input_clean.split())
+        
+        # Get all possible cues from the memory fragment
+        cues = memory_fragment.get('cues', [memory_fragment.get('cue', '')])
+        if isinstance(cues, str):
+            cues = [cues]
+
+        # Positive indicators for exit/completion
+        positive_indicators = {
+            'better', 'clearer', 'helped', 'helpful', 'sense', 
+            'good', 'thank', 'thanks', 'lighter', 'calmer',
+            'understand', 'clear', 'clarity', 'peace', 'peaceful'
+        }
+
+        # 1. Check for exit-handling priority match
+        if memory_fragment.get('id') == 'exit-gratitude-anchor-01':
+            # Match on any positive indicator
+            if any(word in input_tokens for word in positive_indicators):
+                return True
+
+        # 2. Check exact matches
+        if any(cue.lower().strip() == input_clean for cue in cues):
+            return True
+
+        # 3. Check semantic similarity
+        for cue in cues:
+            cue_tokens = set(cue.lower().split())
+            
+            # Match if we share meaningful words
+            if len(input_tokens.intersection(cue_tokens)) >= 2:
+                # But only if not a negative context
+                negative_indicators = {'not', 'dont', "don't", 'no', 'never'}
+                if not input_tokens.intersection(negative_indicators):
+                    return True
+
+        # No match found after trying all strategies
+        return False
 
     def analyze_input(self, text: str) -> Dict:
         state = {
@@ -129,23 +194,54 @@ class CharikloCore:
         return "neutral acknowledgment"
 
     def get_memory_match(self, analysis: Dict) -> Optional[dict]:
-        for memory in memory_bank:
-            if normalize_text(memory.get("cue", "")) == normalize_text(analysis["raw_input"]):
-                chariklo_logger.info(f"🔍 [Exact Cue Match] ID: {memory['id']}")
-                return memory
+        # Always check for final exit after bell acceptance
+        if analysis.get("bell_offered"):
+            # If user responds after bell with thanks/affirmative
+            if (self.detect_user_accepts_sound(analysis["raw_input"], "bell") or 
+                any(word in analysis["raw_input"].lower() for word in ["thank", "bye", "goodbye"])):
+                exit_final = next(
+                    (memory for memory in memory_bank 
+                    if memory.get('id') == 'final-exit-01'),
+                    None
+                )
+                if exit_final:
+                    chariklo_logger.info(f"🔍 [Final Exit] ID: {exit_final['id']}")
+                    return exit_final
+                return None  # Force silence if no final-exit found
 
-        matches = []
-        for memory in memory_bank:
-            if (
-                memory["response_type"] == analysis["response_type"]
-                or memory.get("tier") == analysis["resistance_level"]
-                or memory.get("tier") == analysis["thought_pattern"]
-            ):
-                matches.append(memory)
-        if matches:
-            chosen = random.choice(matches)
-            chariklo_logger.info(f"🔍 [Fallback Match] ID: {chosen['id']}")
-            return chosen
+        # Then check for initial exit patterns
+        # But only if bell hasn't been offered yet AND isn't a bell response
+        if not analysis.get("bell_offered") and not self.detect_user_accepts_sound(analysis["raw_input"], "bell"):
+            exit_memory = next(
+                (memory for memory in memory_bank 
+                if memory.get('id') == 'exit-gratitude-anchor-01' 
+                and self.detect_match(analysis["raw_input"], memory)),
+                None
+            )
+            if exit_memory:
+                chariklo_logger.info(f"🔍 [Exit Pattern Match] ID: {exit_memory['id']}")
+                return exit_memory
+
+        # Regular matching only if not in exit sequence
+        if not analysis.get("bell_offered"):
+            for memory in memory_bank:
+                if self.detect_match(analysis["raw_input"], memory):
+                    chariklo_logger.info(f"🔍 [Exact Cue Match] ID: {memory['id']}")
+                    return memory
+
+            # Fallback matching
+            matches = []
+            for memory in memory_bank:
+                if (
+                    memory["response_type"] == analysis["response_type"]
+                    or memory.get("tier") == analysis["resistance_level"]
+                    or memory.get("tier") == analysis["thought_pattern"]
+                ):
+                    matches.append(memory)
+            if matches:
+                chosen = random.choice(matches)
+                chariklo_logger.info(f"🔍 [Fallback Match] ID: {chosen['id']}")
+                return chosen
 
         return None
 
@@ -185,20 +281,37 @@ class CharikloCore:
         # 6. Absolute fallback: Claude
         raw_response = self.call_anthropic_api(analysis["raw_input"])
         return self.tone_filter.apply(raw_response)
+    
+    def get_bell_path(self) -> str:
+        """Get the path to the bell sound file"""
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        bell_path = os.path.join(base_dir, "Bell.m4a")
+        if os.path.exists(bell_path):
+            return bell_path
+        else:
+            chariklo_logger.error("❌ Bell sound file not found at: %s", bell_path)
+            return None
 
     def call_anthropic_api(self, user_input: str) -> str:
         try:
+            # Shortened system prompt logging - just first few lines
+            chariklo_logger.info("🤖 System Prompt Preview:")
+            first_lines = SYSTEM_PROMPT.split('\n')[:5]
+            chariklo_logger.info("\n".join(first_lines) + "\n...")
+            
             response = client.messages.create(
                 model=model_name,
                 max_tokens=500,
-                system=SYSTEM_PROMPT,  # ✅ Set system prompt here
+                system=SYSTEM_PROMPT,
                 messages=[
                     {"role": "user", "content": user_input}
                 ]
             )
 
-            return ''.join(block.text for block in response.content).strip()
+            response_text = ''.join(block.text for block in response.content).strip()
+            chariklo_logger.info(f"🤖 Claude response: {response_text}")
+            return response_text
 
         except Exception as e:
-            print("Claude API error:", e)
+            chariklo_logger.error(f"❌ Claude API error: {e}")
             return "⚠️ Claude could not complete this request."

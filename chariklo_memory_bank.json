@@ -201,23 +201,6 @@
     ]
   },
   {
-    "id": "exit-gratitude-anchor-01",
-    "cue": "Thanks, I think that helped.",
-    "chariklo_response": "I’m glad it felt helpful. If you’d like a moment to ground that, I can ring the bell once before we close. Just let me know.",
-    "tone": "calm, simple, anchor-inviting",
-    "tier": "exit-handling",
-    "response_type": "optional-grounding",
-    "user_state_shift": "gratitude → settling",
-    "offers_bell": true,
-    "follows_with_silence": true,
-    "invites_presence": true,
-    "presence_notes": [
-      "Honors user expression without reflecting emotional tone.",
-      "Extends stillness without prolonging engagement.",
-      "Offers anchoring only when the user seems open."
-    ]
-  },
-  {
     "id": "exit-soft-closure-01",
     "cue": "Maybe I’ll go for a walk—something simple, like you said. That actually sounds nice.",
     "chariklo_response": "Good to hear. Enjoy that bit of quiet and extra space. You’re actually really good at this. A clear, skeptical vision will always benefit self-inquiry.",
@@ -233,22 +216,72 @@
       "Leaves the user with quiet confidence in their own direction."
     ]
   },
+    {
+      "id": "exit-gratitude-anchor-01",
+      "cues": [
+          "thanks. i think that helped",
+          "thanks, i think that helped",
+          "thank you, that helped",
+          "that helped",
+          "feeling better",
+          "this helped",
+          "this was helpful",
+          "that was helpful",
+          "i feel better",
+          "that makes sense",
+          "that clarified things",
+          "i'm clearer now",
+          "that brings clarity",
+          "this brought clarity",
+          "thanks. i'm feeling better",
+          "thanks, that helped",
+          "i'm feeling better"
+      ],
+      "chariklo_response": "I'm glad this felt helpful. If you'd like a moment to ground this, I can ring the bell once before we close. Just let me know.",
+      "tone": "calm, simple, anchor-inviting",
+      "tier": "exit-handling",
+      "response_type": "optional-grounding",
+      "user_state_shift": "gratitude → settling",
+      "offers_bell": true,
+      "follows_with_silence": true,
+      "invites_presence": true,
+      "presence_notes": [
+          "Honors user expression without reflecting emotional tone.",
+          "Extends stillness without prolonging engagement.",
+          "Offers anchoring only when the user seems open."
+      ]
+  },
+    {
+      "id": "final-exit-01",
+      "cues": [
+          "great, ok",
+          "ok",
+          "okay",
+          "alright",
+          "good",
+          "thanks",
+          "goodbye",
+          "bye"
+      ],
+      "chariklo_response": "Would you like to leave this here for now?",
+      "tone": "minimal, spacious",
+      "tier": "final-exit",
+      "response_type": "completion",
+      "follows_with_silence": true
+  },
   {
-    "id": "exit-soft-incompletion-01",
-    "cue": "I think I’m done… or at least, done for now.",
-    "chariklo_response": "Sounds good. If you’d like a little grounding before we part, I can share a sound for you to sit with. Either way, it was good to chat with you.",
-    "tone": "attuned, soft, open-ended",
-    "tier": "exit-handling",
-    "response_type": "incomplete-close",
-    "user_state_shift": "uncertainty → rest",
-    "follows_with_silence": true,
-    "invites_presence": true,
-    "presence_notes": [
-      "Honors non-final endings without seeking resolution.",
-      "Provides gentle invitation to pause without completing.",
-      "Matches emotional openness with optional stillness.",
-      "Offers a choice of grounding without pressure."
-    ]
+    "id": "final-exit-02",
+    "cues": [
+        "thanks, chariklo",
+        "thank you, chariklo",
+        "thanks, chariklo. that was helpful",
+        "thank you, chariklo. that was helpful"
+    ],
+    "chariklo_response": "*I'm glad it was helpful. Till next time = )*",
+    "tone": "minimal, spacious",
+    "tier": "final-exit",
+    "response_type": "completion",
+    "follows_with_silence": true
   },
   {
     "id": "grounding-01",
