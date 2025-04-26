@@ -84,14 +84,10 @@ if user_input := st.chat_input("What's on your mind?"):
 # 🔁 Bell + Response Handling
 if "pending_input" in st.session_state:
     user_input = st.session_state.pending_input
-    bell_offered = st.session_state.get("__chariklo_last_offered_bell", False)
-    
-    # Add bell state to analysis
     analysis = chariklo.analyze_input(user_input)
-    analysis["bell_offered"] = bell_offered
-    
     response = st.session_state.get("pending_response")
 
+    # ✅ Only generate response once
     if response is None:
         response = chariklo.generate_response(analysis)
         st.session_state.pending_response = response
@@ -103,96 +99,48 @@ if "pending_input" in st.session_state:
         f"user said yes: {chariklo.detect_user_accepts_sound(user_input, 'bell')}"
     )
 
-    # Handle bell sequence
     if st.session_state.get("__chariklo_last_offered_bell") and chariklo.detect_user_accepts_sound(user_input, "bell"):
-        # Save just the "sure" response without generating a new one
-        if st.session_state.consent_given:
-            st.session_state.interaction_log.append({
-                "user": user_input,
-                "chariklo": ""  # Empty response for "sure"
-            })
-                        # Add follow-up prompt
-            st.session_state.interaction_log.append({
-                "user": "",
-                "chariklo": "Would you like to leave this here for now?"  # Changed from "*holds space for your exit*"
-            })
-        else:
-            st.session_state.interaction_log.append({
-                "user": "[input not saved]",
-                "chariklo": "[response not saved]"
-            })
-
-        # Play bell
-        bell_path = chariklo.get_bell_path()
-        if bell_path:
-            st.button("Preparing bell...", key="pre_bell_button", disabled=True)
-            st.audio(bell_path, format="audio/m4a")
-            chariklo_logger.info("🔔 Playing bell sound from: %s", bell_path)
-            time.sleep(2)
-        else:
-            chariklo_logger.error("❌ Could not play bell sound - file not found")
-
+        st.button("Preparing bell...", key="pre_bell_button", disabled=True)
+        st.audio("Bell.m4a", format="audio/m4a")
+        chariklo_logger.info("🔔 Playing bell sound after user consent.")
+        time.sleep(2)
         st.session_state["__chariklo_last_offered_bell"] = False
-        del st.session_state["pending_input"]
-        del st.session_state["pending_response"]
-        st.rerun()
 
-    # Handle non-bell responses
-    else:
-        if st.session_state.consent_given:
-            st.session_state.interaction_log.append({
-                "user": user_input,
-                "chariklo": response
-            })
-        else:
-            st.session_state.interaction_log.append({
-                "user": "[input not saved]",
-                "chariklo": "[response not saved]"
-            })
+    # Always append to the log for UI display (regardless of consent)
+    st.session_state.interaction_log.append({
+        "user": user_input,
+        "chariklo": response
+    })
 
-        del st.session_state["pending_input"]
-        del st.session_state["pending_response"]
-        st.rerun()
+    del st.session_state["pending_input"]
+    del st.session_state["pending_response"]
+    st.rerun()
 
-# 🔊 Bell Playback Test (keep only one instance)
+
+# 🔊 Bell Playback Test
 st.markdown("### 🔔 Manual Bell Test")
-if st.button("Play the bell manually", key="manual_bell_test"):  # Added unique key
-    bell_path = chariklo.get_bell_path()
-    if bell_path:
-        st.audio(bell_path, format="audio/m4a")
-    else:
-        st.error("❌ Bell sound file not found")
-
+if st.button("Play the bell manually"):
+    st.audio("Bell.m4a", format="audio/m4a")
 
 # 💬 Display chat history
 st.markdown("### Conversation")
 
-# Create scrollable container
-chat_container = st.container()
+for i, entry in enumerate(st.session_state.interaction_log):
+    st.markdown(f"**You:** {entry['user']}", unsafe_allow_html=True)
+    st.markdown(f"**Chariklo:** {entry['chariklo']}", unsafe_allow_html=True)
 
-# Display messages in scrollable container
-with chat_container:
-    for i, entry in enumerate(st.session_state.interaction_log):
-        # Only show user message if it exists
-        if entry['user']:
-            st.markdown(f"**You:** {entry['user']}", unsafe_allow_html=True)
-        
-        # Only show Chariklo message if it exists
-        if entry['chariklo']:
-            st.markdown(f"**Chariklo:** {entry['chariklo']}", unsafe_allow_html=True)
+    feedback_col1, feedback_col2, _ = st.columns([1, 1, 6])
+    with feedback_col1:
+        if st.button("👍", key=f"thumbs_up_{i}"):
+            st.session_state.interaction_log[i]["feedback"] = "positive"
+            st.success("Thank you. If you'd like to share what felt clear or helpful, you're welcome to.")
 
-        feedback_col1, feedback_col2, _ = st.columns([1, 1, 6])
-        with feedback_col1:
-            if st.button("👍", key=f"thumbs_up_{i}"):
-                st.session_state.interaction_log[i]["feedback"] = "positive"
-                st.success("Thank you. If you'd like to share what felt clear or helpful, you're welcome to.")
+    with feedback_col2:
+        if st.button("👎", key=f"thumbs_down_{i}"):
+            st.session_state.interaction_log[i]["feedback"] = "negative"
+            st.warning("Thank you for helping me figure this out. If you can offer any advice on how it could have worked better, it will help with future updates.")
 
-        with feedback_col2:
-            if st.button("👎", key=f"thumbs_down_{i}"):
-                st.session_state.interaction_log[i]["feedback"] = "negative"
-                st.warning("Thank you for helping me figure this out. If you can offer any advice on how it could have worked better, it will help with future updates.")
-
-        st.markdown("---")
+    st.markdown("---")
 
 # Export
 if st.session_state.consent_given and st.session_state.interaction_log:
@@ -208,7 +156,7 @@ if st.session_state.consent_given and st.session_state.interaction_log:
         )
 
 # Auto-save
-if st.session_state.consent_given:
+if st.session_state.consent_given and st.session_state.interaction_log:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     folder = Path("saved_sessions")
     folder.mkdir(exist_ok=True)
