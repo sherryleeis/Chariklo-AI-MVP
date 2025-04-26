@@ -1,6 +1,0 @@
-You: hi!
-Chariklo: Hey there! It's good to connect.
-
-You: how are you?
-Chariklo: Everything seems good on my end—fully functioning and ready to chat!
-
