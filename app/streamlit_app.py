@@ -5,7 +5,7 @@ print("PYTHONPATH:", sys.path)
 
 from chariklo.chariklo_core import get_chariklo_response, process_audio_commands
 from chariklo.memory_system import UserControlledMemory
-from chariklo.reflection_logger import ReflectionLogger
+from reflection_logger import ReflectionLogger
 from chariklo_reflection_tracker import CharikloReflectionTracker
 
 # Initialize session state
