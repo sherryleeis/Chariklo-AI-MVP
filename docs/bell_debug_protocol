@@ -1,0 +1,127 @@
+  ],
+  "chariklo_response": "I'm glad this felt helpful. If you'd like a moment to ground this, I can ring the bell once before we close. Just let me know.",
+  "tone": "calm, simple, anchor-inviting",
+  "tier": "exit-handling",
+  "response_type": "optional-grounding",
+  "user_state_shift": "gratitude \u2192 settling",
+  "offers_bell": true,
+  "follows_with_silence": true,
+  "invites_presence": true,
+  "goodbye": true,
+  "presence_notes": [
+    "Honors user expression without reflecting emotional tone.",
+    "Extends stillness without prolonging engagement.",
+    "Offers anchoring only when the user seems open."
+  ]
+}
+🧘 CHARIKLO DEBUG — silence = True
+INFO:chariklo:🧪 Raw user input: sure
+INFO:chariklo:🤖 System Prompt Preview:
+INFO:chariklo:
+You are Chariklo, a presence-based AI.
+
+## Core Function  
+You dissolve distraction. You hold space.  
+...
+INFO:chariklo:🤖 Claude response: I'm here, and ready to listen whenever you'd like to begin.
+# Main bell acceptance block
+if st.session_state.get("__chariklo_last_offered_bell") and user_accepts_bell(user_input):
+    # Clean up states
+    if "pending_input" in st.session_state:
+        del st.session_state["pending_input"]
+    if "pending_response" in st.session_state:
+        del st.session_state["pending_response"]
+    # Set bell flag
+    st.session_state["show_bell_button"] = True
+    st.rerun()  # Critical: This rerun triggers the bell UI
+
+    2. Separation of Concerns
+Bell acceptance logic (in main flow) ONLY sets flags
+Bell UI display (at bottom) ONLY handles rendering
+No mixing of state changes and UI rendering
+3. Correct Rerun Placement
+The app has exactly three strategic st.rerun() calls:
+
+After initial user input (line ~106)
+After accepting bell (line ~132)
+After processing response (line ~167)
+Why It Works
+Clean State Transitions:
+
+User says "thanks that helped" → offers_bell set to True
+User accepts bell → show_bell_button set to True
+Bell displays → States reset properly
+No Race Conditions:
+
+Each state change completes before next cycle
+States don't conflict or overlap
+Proper Cleanup:
+
+pending_input and pending_response cleared at right moments
+Bell states reset after display
+Common Pitfalls to Avoid
+Don't add extra st.rerun() calls
+Don't mix state changes with UI rendering
+Don't modify bell states in multiple places
+Don't append to interaction log multiple times for same action
+Save this analysis for reference when making future changes to the bell flow.
+
+# Chariklo Bell Flow Debug Protocol
+
+## Implementation Pattern
+
+### State Management
+```python
+if "last_bell_offer_time" not in st.session_state:
+    st.session_state.last_bell_offer_time = datetime.now() - timedelta(minutes=30)
+if "conversation_tokens" not in st.session_state:
+    st.session_state.conversation_tokens = 0
+if "__chariklo_last_offered_bell" not in st.session_state:
+    st.session_state["__chariklo_last_offered_bell"] = False
+```
+
+### Working Bell Flow
+1. **State Transitions**
+   - User: "thanks that helped" → `offers_bell` set to `True`
+   - User accepts bell → `show_bell_button` set to `True`
+   - Bell displays → States reset properly
+
+2. **Strategic Reruns**
+   - After initial user input (line ~106)
+   - After accepting bell (line ~132)
+   - After processing response (line ~167)
+
+3. **Bell Offering Logic**
+```python
+if analysis.get("offers_bell"):
+    time_since_last_bell = datetime.now() - st.session_state.last_bell_offer_time
+    if (time_since_last_bell.total_seconds() > 1800 or  # 30 minutes
+        st.session_state.conversation_tokens >= 100):    # Token threshold
+        st.session_state["__chariklo_last_offered_bell"] = True
+        st.session_state.last_bell_offer_time = datetime.now()
+        st.session_state.conversation_tokens = 0
+```
+
+## Debug Checklist
+
+- [ ] All states initialized at startup
+- [ ] Token counting increments correctly
+- [ ] Bell timing threshold appropriate (30 min)
+- [ ] State transitions clean and single-purpose
+- [ ] Reruns only at strategic points
+- [ ] UI rendering separate from state changes
+
+## Common Pitfalls
+
+1. ❌ Adding extra `st.rerun()` calls
+2. ❌ Mixing state changes with UI rendering
+3. ❌ Modifying bell states in multiple places
+4. ❌ Appending to interaction log multiple times
+5. ❌ Setting thresholds too high (500+ tokens)
+
+## Debugging Tools
+```python
+chariklo_logger.info(f"🔔 Time since last bell: {time_since_last_bell.total_seconds() // 60} minutes")
+chariklo_logger.info(f"🔔 Current token count: {st.session_state.conversation_tokens}")
+chariklo_logger.info(f"🔔 Bell Debug — offered: {st.session_state.get('__chariklo_last_offered_bell')}")
+```

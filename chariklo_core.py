@@ -6,7 +6,7 @@ import os
 from anthropic import Anthropic
 from dotenv import load_dotenv  
 import re  # for normalize_text in cue matching
-from chariklo_system_prompt import SYSTEM_PROMPT
+from chariklo.chariklo_system_prompt import SYSTEM_PROMPT
 import time
 import random
 import json
@@ -32,10 +32,6 @@ from chariklo_loop_detection import CharikloLoopDetection
 from chariklo_patterns import state_patterns, thought_patterns
 from chariklo_tone import ToneFilter
 from chariklo_stuckness import StucknessHandler
-
-# Load Memory Bank
-with open('chariklo_memory_bank.json', 'r') as f:
-    memory_bank = json.load(f)
 
 # Load API Environment
 load_dotenv()
@@ -86,47 +82,6 @@ class CharikloCore:
         # Check for affirmative response
         return bool(re.search(pattern, user_input_clean))
 
-    def detect_match(self, input_text: str, memory_fragment: dict) -> bool:
-        """Enhanced semantic matching with prioritized exit handling"""
-        input_clean = input_text.lower().strip()
-        input_tokens = set(input_clean.split())
-        
-        # Get all possible cues from the memory fragment
-        cues = memory_fragment.get('cues', [memory_fragment.get('cue', '')])
-        if isinstance(cues, str):
-            cues = [cues]
-
-        # Positive indicators for exit/completion
-        positive_indicators = {
-            'better', 'clearer', 'helped', 'helpful', 'sense', 
-            'good', 'thank', 'thanks', 'lighter', 'calmer',
-            'understand', 'clear', 'clarity', 'peace', 'peaceful'
-        }
-
-        # 1. Check for exit-handling priority match
-        if memory_fragment.get('id') == 'exit-gratitude-anchor-01':
-            # Match on any positive indicator
-            if any(word in input_tokens for word in positive_indicators):
-                return True
-
-        # 2. Check exact matches
-        if any(cue.lower().strip() == input_clean for cue in cues):
-            return True
-
-        # 3. Check semantic similarity
-        for cue in cues:
-            cue_tokens = set(cue.lower().split())
-            
-            # Match if we share meaningful words
-            if len(input_tokens.intersection(cue_tokens)) >= 2:
-                # But only if not a negative context
-                negative_indicators = {'not', 'dont', "don't", 'no', 'never'}
-                if not input_tokens.intersection(negative_indicators):
-                    return True
-
-        # No match found after trying all strategies
-        return False
-
     def analyze_input(self, text: str) -> Dict:
         state = {
             "resistance_level": self.detect_resistance(text),
@@ -143,23 +98,15 @@ class CharikloCore:
         return state
 
     def detect_resistance(self, text: str) -> str:
-        if self.detect_engagement(text) == "processing":
-            return "none"
-        for level, info in self.state_patterns["resistance"].items():
-            if any(re.search(p, text, re.I) for p in info["patterns"]):
-                return level
-        return "low"
+        # Patterns have been deprecated; always return 'none' for now
+        return "none"
 
     def detect_engagement(self, text: str) -> str:
-        for type_, info in self.state_patterns["engagement"].items():
-            if any(re.search(p, text, re.I) for p in info["patterns"]):
-                return type_
+        # Patterns have been deprecated; always return 'neutral' for now
         return "neutral"
 
     def detect_thought_pattern(self, text: str) -> str:
-        for pattern_type, info in self.thought_patterns.items():
-            if any(re.search(p, text, re.I) for p in info["patterns"]):
-                return pattern_type
+        # Patterns have been deprecated; always return 'neutral' for now
         return "neutral"
 
     def determine_presence_state(self, text: str) -> str:
@@ -185,103 +132,45 @@ class CharikloCore:
         return "standard"
 
     def get_response_type(self, analysis: Dict) -> str:
-        if analysis["thought_pattern"] in self.thought_patterns:
-            return self.thought_patterns[analysis["thought_pattern"]]["response_type"]
-        if analysis["resistance_level"] == "high":
+        """
+        Temporarily bypass old pattern matching system.
+        Return a basic response type based on reflection cues or presence tier.
+        """
+        presence = analysis.get("presence_quality", "neutral")
+
+        if presence == "minimal":
             return "minimal acknowledgment"
-        if analysis["engagement_type"] in self.state_patterns["engagement"]:
-            return self.state_patterns["engagement"][analysis["engagement_type"]]["response_type"]
-        return "neutral acknowledgment"
-
-    def get_memory_match(self, analysis: Dict) -> Optional[dict]:
-        # Always check for final exit after bell acceptance
-        if analysis.get("bell_offered"):
-            # If user responds after bell with thanks/affirmative
-            if (self.detect_user_accepts_sound(analysis["raw_input"], "bell") or 
-                any(word in analysis["raw_input"].lower() for word in ["thank", "bye", "goodbye"])):
-                exit_final = next(
-                    (memory for memory in memory_bank 
-                    if memory.get('id') == 'final-exit-01'),
-                    None
-                )
-                if exit_final:
-                    chariklo_logger.info(f"🔍 [Final Exit] ID: {exit_final['id']}")
-                    return exit_final
-                return None  # Force silence if no final-exit found
-
-        # Then check for initial exit patterns
-        # But only if bell hasn't been offered yet AND isn't a bell response
-        if not analysis.get("bell_offered") and not self.detect_user_accepts_sound(analysis["raw_input"], "bell"):
-            exit_memory = next(
-                (memory for memory in memory_bank 
-                if memory.get('id') == 'exit-gratitude-anchor-01' 
-                and self.detect_match(analysis["raw_input"], memory)),
-                None
-            )
-            if exit_memory:
-                chariklo_logger.info(f"🔍 [Exit Pattern Match] ID: {exit_memory['id']}")
-                return exit_memory
-
-        # Regular matching only if not in exit sequence
-        if not analysis.get("bell_offered"):
-            for memory in memory_bank:
-                if self.detect_match(analysis["raw_input"], memory):
-                    chariklo_logger.info(f"🔍 [Exact Cue Match] ID: {memory['id']}")
-                    return memory
-
-            # Fallback matching
-            matches = []
-            for memory in memory_bank:
-                if (
-                    memory["response_type"] == analysis["response_type"]
-                    or memory.get("tier") == analysis["resistance_level"]
-                    or memory.get("tier") == analysis["thought_pattern"]
-                ):
-                    matches.append(memory)
-            if matches:
-                chosen = random.choice(matches)
-                chariklo_logger.info(f"🔍 [Fallback Match] ID: {chosen['id']}")
-                return chosen
-
-        return None
+        elif presence == "spacious":
+            return "mirror + silence"
+        elif presence == "neutral":
+            return "open reflection"
+        else:
+            return "default reflection"
 
     def generate_response(self, analysis: Dict) -> str:
-        logging.debug(f"🧠 Full analysis input: {analysis}")
+        logging.debug(f"\U0001F9E0 Full analysis input: {analysis}")
 
         # 1. Loop response check
         loop_response = self.loop_detector.get_loop_response(analysis["loop_type"])
         if loop_response:
             return loop_response
 
-        # 2. Presence memory match
-        chariklo_logger.info(f"🧪 Raw user input: {analysis['raw_input']}")
-        memory = self.get_memory_match(analysis)
-        if memory:
-            analysis["follows_with_silence"] = memory.get("follows_with_silence", False)
-            analysis["offers_bell"] = memory.get("offers_bell", False)
-            print("🪵 FOLLOW-UP: Silence is", analysis["follows_with_silence"])
-            chariklo_logger.info(f"🔍 [Memory Match] Full Fragment: {json.dumps(memory, indent=2)}")
-            print("🧘 CHARIKLO DEBUG — silence = True")
-            return self.tone_filter.apply(memory["chariklo_response"])
-
-        # 3. Core redirection check
+        # 2. Stuckness handler (if present)
         thought_pattern = analysis.get("thought_pattern", "neutral")
-        if thought_pattern in self.stuckness_handler.tiers:
+        if hasattr(self.stuckness_handler, 'tiers') and thought_pattern in self.stuckness_handler.tiers:
             stuck_response = self.stuckness_handler.get_stuckness_response(thought_pattern, analysis)
             if stuck_response:
                 return self.tone_filter.apply(stuck_response + " [stuckness]")
 
-        # 5. Final fallback: Soft edge-case support before Claude
-        if "numb" in analysis["raw_input"].lower():
-            logging.debug("🧪 Using soft fallback for 'numb' case.")
-            return self.tone_filter.apply(
-            "Even if it feels like nothing is happening, something brought you here. That’s worth noticing."
-        )
-
-        # 6. Absolute fallback: Claude
+        # 3. Final fallback: LLM response
         raw_response = self.call_anthropic_api(analysis["raw_input"])
-        return self.tone_filter.apply(raw_response)
-    
+        response = self.tone_filter.apply(raw_response)
+
+        # Presence-based bell trigger: if response_type is 'mirror + silence', append [[bell]]
+        if analysis.get("response_type") == "mirror + silence":
+            response = f"{response} [[bell]]"
+        return response
+
     def get_bell_path(self) -> str:
         """Get the path to the bell sound file"""
         base_dir = os.path.dirname(os.path.abspath(__file__))
