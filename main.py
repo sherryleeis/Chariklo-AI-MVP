@@ -48,12 +48,12 @@ try:
         st.session_state.show_feedback_form = False
 
     # Header - Logo and title on same line
-    st.markdown("""
-        <div style='display: flex; align-items: center; margin-bottom: 1rem;'>
-            <img src='assets/chariklo_logo.jpg' width='80' style='margin-right: 15px;'>
-            <h2 style='margin: 0; line-height: 1.2;'>Chariklo: AI for Inner Space</h2>
-        </div>
-    """, unsafe_allow_html=True)
+    col_logo, col_title = st.columns([1, 6])
+    with col_logo:
+        if os.path.exists("assets/chariklo_logo.jpg"):
+            st.image("assets/chariklo_logo.jpg", width=80)
+    with col_title:
+        st.markdown("<h2 style='margin-top: 10px;'>Chariklo: AI for Inner Space</h2>", unsafe_allow_html=True)
 
     # Onboarding Flow - Show first for new users
     if not st.session_state.onboarding_complete:
