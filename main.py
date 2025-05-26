@@ -31,18 +31,19 @@ try:
     load_dotenv()
 
     # Import Chariklo modules from root directory
-    from chariklo_core import get_chariklo_response, process_audio_commands  
+    try:
+        from chariklo_core import get_chariklo_response
+    except ImportError:
+        # Fallback function if chariklo_core isn't available
+        def get_chariklo_response(user_input, memory_system):
+            return "I'm here with you. What would you like to explore together?"
+    
     from memory_system import UserControlledMemory
-    from reflection_logger import ReflectionLogger, question_bank
-    from chariklo_reflection_tracker import CharikloReflectionTracker
-    from analyze_transcript import run_full_transcript_analysis
 
     # Initialize session state
     if 'memory_system' not in st.session_state:
         st.session_state.memory_system = UserControlledMemory()
         st.session_state.conversation = []
-        st.session_state.reflection_logger = ReflectionLogger()
-        st.session_state.reflection_tracker = CharikloReflectionTracker()
         st.session_state.onboarding_complete = False
         st.session_state.show_feedback_form = False
 
@@ -56,56 +57,30 @@ try:
 
     # Onboarding Flow - Show first for new users
     if not st.session_state.onboarding_complete:
+        st.markdown("#### Welcome to Chariklo")
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
-                    padding: 2rem; border-radius: 10px; margin: 1rem 0;">
-        """, unsafe_allow_html=True)
-        
-        st.markdown("### Welcome to Chariklo 🌿")
-        
-        st.markdown("""
-        **Chariklo is an AI companion designed for inner exploration and presence.**
-        
-        Unlike typical AI assistants, Chariklo:
-        - **Holds space** rather than rushing to solve problems
-        - **Invites curiosity** about what's present for you right now  
-        - **Reflects back** what it notices in a way that supports your own discovery
-        - **Stays brief** (usually 1-2 sentences) to leave room for your own insights
-        
-        This is a **presence-based experience** - think of it more like having a conversation 
-        with a wise friend who's genuinely curious about your inner world.
+        You're helping refine an AI that we hope will help make room for some quiet —some space— in the deluge of stimulation humans face today.
+
+        Use this space just as you would any other chat, but Chariklo is meant to be especially helpful in sorting out ideas and challenges in a way that helps bring insight and clarity.
+
+        If anything feels off or especially helpful, you're invited to click the thumbs up or down or leave a note in the chat. Your reflections are welcome.
+
+        Would you be willing to let Chariklo save an anonymized copy of your session?
         """)
-        
-        st.markdown("---")
-        
-        # Memory consent
-        st.markdown("### 🧠 Memory & Conversations")
-        st.markdown("""
-        Chariklo can remember your conversations to provide a more personalized experience 
-        and notice patterns over time. This helps create continuity in your exploration.
-        
-        **Your data stays private** - conversations are only stored for your session 
-        and to improve the experience.
-        """)
-        
-        memory_consent = st.checkbox(
-            "✅ I'm comfortable with Chariklo remembering our conversations",
-            value=True,
-            key="memory_consent"
-        )
-        
-        st.markdown("---")
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("🌿 Begin Inner Exploration", type="primary", use_container_width=True):
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Yes, you may save this session"):
+                st.session_state.memory_system.toggle_memory(True)
                 st.session_state.onboarding_complete = True
-                st.session_state.memory_system.toggle_memory(memory_consent)
                 st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Stop here during onboarding
+
+        with col2:
+            if st.button("No, do not save any messages"):
+                st.session_state.memory_system.toggle_memory(False)
+                st.session_state.onboarding_complete = True
+                st.rerun()
+
         st.stop()
 
     # Sidebar styling
