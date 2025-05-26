@@ -1,0 +1,8 @@
+[general]
+python = "3.11"
+
+[theme]
+primaryColor = "#4F7942"
+backgroundColor = "#FAFAFA"
+secondaryBackgroundColor = "#E8F5E8"
+textColor = "#2F4F2F"
