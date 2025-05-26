@@ -32,11 +32,40 @@ try:
 
     # Import Chariklo modules from root directory
     try:
-        from chariklo_core import get_chariklo_response
+        # First check if we have a valid API key before importing chariklo_core
+        from dotenv import load_dotenv
+        load_dotenv()
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        
+        if not api_key or len(api_key) < 20:
+            # No valid API key - use demo mode
+            st.session_state.demo_mode = True
+            def get_chariklo_response(user_input, memory_system):
+                demo_responses = [
+                    "I'm here with you in this moment. What would you like to explore together?",
+                    "I sense you have something on your mind. Would you like to share what's arising for you?",
+                    "There's a quality of presence available right now. What are you noticing?",
+                    "I'm listening with my full attention. What feels important to explore today?",
+                    "Something is seeking your attention. What wants to be seen or understood?"
+                ]
+                import random
+                return f"💭 **Demo Mode**: {random.choice(demo_responses)}\n\n*Configure your API key to enable full Chariklo responses.*"
+        else:
+            # Try to import the real chariklo_core
+            try:
+                from chariklo_core import get_chariklo_response
+                st.session_state.demo_mode = False
+            except Exception as e:
+                # If import fails, fall back to demo mode
+                st.session_state.demo_mode = True
+                def get_chariklo_response(user_input, memory_system):
+                    return f"🔧 **Connection Issue**: {str(e)}\n\nPlease check your setup and try again."
+                    
     except ImportError:
-        # Fallback function if chariklo_core isn't available
+        # Complete fallback if imports fail
+        st.session_state.demo_mode = True
         def get_chariklo_response(user_input, memory_system):
-            return "I'm here with you. What would you like to explore together?"
+            return "I'm experiencing a connection issue. Please check your setup and try again."
     
     from memory_system import UserControlledMemory
 
@@ -46,6 +75,7 @@ try:
         st.session_state.conversation = []
         st.session_state.onboarding_complete = False
         st.session_state.show_feedback_form = False
+        st.session_state.demo_mode = False
 
     # Header - Logo and title on same line
     col_logo, col_title = st.columns([1, 6])
@@ -53,7 +83,10 @@ try:
         if os.path.exists("assets/chariklo_logo.jpg"):
             st.image("assets/chariklo_logo.jpg", width=80)
     with col_title:
-        st.markdown("<h2 style='margin-top: 10px;'>Chariklo: AI for Inner Space</h2>", unsafe_allow_html=True)
+        if st.session_state.get('demo_mode', False):
+            st.markdown("<h2 style='margin-top: 10px;'>Chariklo: AI for Inner Space <span style='color: #ff6b6b; font-size: 0.6em;'>DEMO MODE</span></h2>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h2 style='margin-top: 10px;'>Chariklo: AI for Inner Space</h2>", unsafe_allow_html=True)
 
     # Onboarding Flow - Show first for new users
     if not st.session_state.onboarding_complete:
@@ -165,10 +198,24 @@ try:
 
     # Welcome message for new users
     if not st.session_state.conversation:
+        if st.session_state.get('demo_mode', False):
+            st.info("🔧 **Demo Mode Active** - Configure your API key for full Chariklo responses")
+            with st.expander("🔑 Quick Setup Instructions"):
+                st.markdown("""
+                **To enable full functionality:**
+                
+                1. Get an API key from [console.anthropic.com](https://console.anthropic.com)
+                2. Update your `.env` file: `ANTHROPIC_API_KEY=your_key_here`
+                3. Run `python validate_api.py` to test
+                4. Restart the app
+                
+                📖 **See `API_SETUP.md` for detailed instructions**
+                """)
+        
         st.markdown("""
         ### Welcome to Chariklo 🌿
         
-        Chariklo is a presence-based AI designed to hold space for your inner exploration.
+        Chariklo is a presence-based AI designed to hold space for inner exploration.
         
         **Try starting with what's present for you right now...**
         

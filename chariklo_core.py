@@ -203,7 +203,17 @@ class CharikloCore:
 
         except Exception as e:
             chariklo_logger.error(f"❌ Claude API error: {e}")
-            return "⚠️ Claude could not complete this request."
+            
+            # Provide specific error messages for common issues
+            error_str = str(e).lower()
+            if "authentication" in error_str or "api key" in error_str:
+                return "🔑 **API Key Issue**: Please check your Anthropic API key in the .env file. Make sure it's valid and has sufficient credits."
+            elif "rate limit" in error_str:
+                return "⏱️ **Rate Limit**: Too many requests. Please wait a moment and try again."
+            elif "model" in error_str:
+                return "🤖 **Model Issue**: The specified Claude model is not available. Please check your configuration."
+            else:
+                return f"⚠️ **Connection Issue**: {str(e)}"
 
 # ─── Main Response Function for Streamlit ─────────────────────────────
 
