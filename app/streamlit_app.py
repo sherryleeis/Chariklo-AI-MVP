@@ -46,8 +46,76 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Memory controls
-memory_enabled = st.checkbox("Allow Chariklo to remember our conversations")
+memory_enabled = st.checkbox("Allow Chariklo to remember our conversations", value=True)
 st.session_state.memory_system.toggle_memory(memory_enabled)
+
+# Feedback System
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 💝 Share Your Experience")
+
+# Feedback button and form
+if st.sidebar.button("✨ Give Feedback", type="primary", use_container_width=True):
+    st.session_state.show_feedback_form = True
+
+# Show feedback form when button is clicked
+if st.session_state.get('show_feedback_form', False):
+    with st.sidebar.expander("📝 We'd love your feedback!", expanded=True):
+        # Pre-populated feedback template based on testing criteria
+        default_feedback = """**Presence Quality**: Does Chariklo feel genuinely present vs. performing helpfulness?
+- 
+
+**Response Length**: Are responses appropriately brief (1-2 sentences mostly)?
+- 
+
+**Natural Flow**: Does conversation feel organic vs. scripted?
+- 
+
+**Insight Emergence**: Do you discover things vs. being told things?
+- 
+
+**Overall Experience**:
+- 
+
+**Any bugs or suggestions**:
+- """
+        
+        feedback_text = st.text_area(
+            "Your thoughts:",
+            value=default_feedback,
+            height=300,
+            help="Feel free to modify these questions or add your own observations!"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Submit Feedback"):
+                # Save feedback to a file
+                from datetime import datetime
+                import os
+                
+                # Create feedback directory if it doesn't exist
+                feedback_dir = "saved_sessions/feedback"
+                os.makedirs(feedback_dir, exist_ok=True)
+                
+                # Save feedback with timestamp
+                timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                feedback_file = f"{feedback_dir}/feedback_{timestamp}.txt"
+                
+                with open(feedback_file, 'w') as f:
+                    f.write(f"Feedback submitted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write("="*50 + "\n\n")
+                    f.write(feedback_text)
+                
+                st.success("Thank you! Your feedback helps improve Chariklo 🙏")
+                st.session_state.show_feedback_form = False
+                st.rerun()
+        
+        with col2:
+            if st.button("Cancel"):
+                st.session_state.show_feedback_form = False
+                st.rerun()
+
+st.sidebar.markdown("---")
 
 # Chat interface
 def scroll_to_bottom():
@@ -55,6 +123,33 @@ def scroll_to_bottom():
         <script>
         window.scrollTo(0, document.body.scrollHeight);
         </script>
+    """, unsafe_allow_html=True)
+
+# Welcome message for new users
+if not st.session_state.conversation:
+    st.markdown("""
+    <div style='background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%); 
+                padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4F7942;'>
+        <h3 style='color: #2F4F2F; margin-top: 0;'>Welcome to Chariklo 🌿</h3>
+        <p style='color: #2F4F2F; margin-bottom: 15px;'>
+            Chariklo is a presence-based AI designed to create space for authentic self-discovery. 
+            Instead of offering solutions, I hold space for whatever is present in your experience.
+        </p>
+        <details style='color: #2F4F2F;'>
+            <summary style='font-weight: bold; cursor: pointer; margin-bottom: 10px;'>
+                ✨ Try these to get started...
+            </summary>
+            <ul style='margin-left: 20px; line-height: 1.6;'>
+                <li>Share what's on your mind right now</li>
+                <li>Type <code>[[bell]]</code> for a mindfulness chime</li>
+                <li>Use the feedback button in the sidebar to share your experience</li>
+                <li>Toggle memory on/off to see how it affects our interaction</li>
+            </ul>
+        </details>
+        <p style='color: #666; font-size: 0.9em; margin-bottom: 0; font-style: italic;'>
+            💡 This is a testing environment - your feedback helps improve Chariklo's presence and responsiveness.
+        </p>
+    </div>
     """, unsafe_allow_html=True)
 
 for message in st.session_state.conversation:
