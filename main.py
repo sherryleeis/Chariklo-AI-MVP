@@ -187,8 +187,9 @@ try:
                     break
                     
             if last_user and last_assistant:
-                st.session_state.memory_system.add_important_moment(
-                    last_user, last_assistant, "User marked as important"
+                conversation_snippet = f"User: {last_user}\nChariklo: {last_assistant}"
+                st.session_state.memory_system.mark_memory(
+                    conversation_snippet, "User marked as important"
                 )
                 st.success("✨ Moment saved to memory")
                 
