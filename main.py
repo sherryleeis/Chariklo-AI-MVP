@@ -3,7 +3,7 @@ import sys
 import os
 from pathlib import Path
 
-# Set page config first (before any other streamlit commands)
+# Set page config first
 st.set_page_config(
     page_title="Chariklo: AI for Inner Space",
     page_icon="🌿",
@@ -14,14 +14,13 @@ st.set_page_config(
 # Get the absolute path to the project root
 project_root = Path(__file__).parent.absolute()
 
-# Add both project root and app directory to Python path
+# Add project root to Python path
 sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(project_root / "app"))
 
-# Set working directory
+# Set working directory to project root
 os.chdir(project_root)
 
-# Now import and run the app
+# Import required modules
 try:
     import glob
     import json
@@ -31,11 +30,11 @@ try:
     # Load environment variables
     load_dotenv()
 
-    # Import Chariklo modules
-    from chariklo.chariklo_core import get_chariklo_response, process_audio_commands
-    from chariklo.memory_system import UserControlledMemory
+    # Import Chariklo modules from root directory
+    from chariklo_core import get_chariklo_response, process_audio_commands  
+    from memory_system import UserControlledMemory
     from reflection_logger import ReflectionLogger, question_bank
-    from chariklo.chariklo_reflection_tracker import CharikloReflectionTracker
+    from chariklo_reflection_tracker import CharikloReflectionTracker
     from analyze_transcript import run_full_transcript_analysis
 
     # Initialize session state
