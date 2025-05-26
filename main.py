@@ -223,11 +223,39 @@ try:
         """)
 
     # Display conversation
-    for message in st.session_state.conversation:
+    for i, message in enumerate(st.session_state.conversation):
         if message["role"] == "user":
             st.markdown(f"**You:** {message['content']}")
         elif message["role"] == "assistant":
             st.markdown(f"**Chariklo:** {message['content']}")
+            
+            # Add quick feedback buttons for assistant responses
+            feedback_col1, feedback_col2, feedback_col3 = st.columns([2, 2, 4])
+            with feedback_col1:
+                if st.button("👍 Helpful", key=f"thumbs_up_{i}", help="This response was helpful", use_container_width=True):
+                    # Initialize feedback in session state if not exists
+                    if "response_feedback" not in st.session_state:
+                        st.session_state.response_feedback = {}
+                    st.session_state.response_feedback[i] = "positive"
+                    st.success("Thank you! 🙏 Your feedback helps Chariklo improve.")
+
+            with feedback_col2:
+                if st.button("👎 Improve", key=f"thumbs_down_{i}", help="This response could be improved", use_container_width=True):
+                    # Initialize feedback in session state if not exists
+                    if "response_feedback" not in st.session_state:
+                        st.session_state.response_feedback = {}
+                    st.session_state.response_feedback[i] = "negative"
+                    st.info("Thank you for the feedback. Consider sharing details in the sidebar feedback form to help us improve.")
+            
+            # Show feedback status if given
+            if st.session_state.get("response_feedback", {}).get(i):
+                feedback_type = st.session_state.response_feedback[i]
+                if feedback_type == "positive":
+                    st.markdown("*✨ Marked as helpful*")
+                elif feedback_type == "negative":
+                    st.markdown("*📝 Marked for improvement*")
+            
+            st.markdown("---")
 
     # User input
     if user_input := st.chat_input("What's present for you right now?"):
