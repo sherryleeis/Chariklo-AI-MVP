@@ -204,3 +204,60 @@ class CharikloCore:
         except Exception as e:
             chariklo_logger.error(f"❌ Claude API error: {e}")
             return "⚠️ Claude could not complete this request."
+
+# ─── Main Response Function for Streamlit ─────────────────────────────
+
+def get_chariklo_response(user_input, memory_system=None):
+    """
+    Main entry point for getting Chariklo responses.
+    Compatible with the Streamlit app interface.
+    """
+    try:
+        # Convert memory_system to conversation_history format if needed
+        conversation_history = []
+        if memory_system and hasattr(memory_system, 'conversation_history'):
+            # Convert memory system format to Claude API format
+            for entry in memory_system.conversation_history:
+                if isinstance(entry, dict):
+                    conversation_history.append({
+                        "role": entry.get("role", "user"),
+                        "content": entry.get("content", str(entry))
+                    })
+        
+        # Add current user input
+        conversation_history.append({
+            "role": "user", 
+            "content": user_input
+        })
+        
+        # Initialize core and get response
+        core = CharikloCore()
+        response = core.call_anthropic_api(user_input)
+        
+        # Update memory system if provided
+        if memory_system and hasattr(memory_system, 'add_exchange'):
+            memory_system.add_exchange(user_input, response)
+        
+        return response
+        
+    except Exception as e:
+        return f"I'm having trouble connecting right now. Please try again in a moment. ({str(e)})"
+
+def process_audio_commands(response_text):
+    """Process audio commands like [[bell]] in responses."""
+    import re
+    import streamlit as st
+    import os
+    
+    pattern = r"\[\[(.*?)\]\]"  # Matches [[bell]], [[rain-30]], etc.
+    matches = re.findall(pattern, response_text)
+    clean_text = re.sub(pattern, '', response_text)
+    
+    for match in matches:
+        cue = match.strip().lower()
+        if cue == "bell":
+            audio_path = "assets/Bell.m4a"
+            if os.path.exists(audio_path):
+                st.audio(audio_path, autoplay=True)
+    
+    return clean_text.strip()
