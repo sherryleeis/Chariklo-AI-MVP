@@ -1,0 +1,11 @@
+CHARIKLO_DEV=1 streamlit run app/streamlit_app.py
+
+Create new folder: mkdir documentation (eg- documentation is the name of the new folder)
+
+ List files: tree -L 2
+
+combined analysis and feedback:
+
+python3 compare_reflection_and_transcript.py
+
+The reflection_logger.py file has been moved to the main project directory as requested. You can now import and use `ReflectionLogger` from the top level of your project.
