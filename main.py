@@ -53,7 +53,7 @@ try:
         if os.path.exists("assets/chariklo_logo.jpg"):
             st.image("assets/chariklo_logo.jpg", width=80)
     with col_title:
-        st.markdown("# Chariklo: AI for Inner Space")
+        st.markdown("## Chariklo: AI for Inner Space")
 
     # Onboarding Flow - Show first for new users
     if not st.session_state.onboarding_complete:
