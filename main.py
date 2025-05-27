@@ -288,11 +288,11 @@ try:
             # Get Chariklo response
             try:
                 response = st.session_state.get_chariklo_response(user_input, st.session_state.memory_system)
-                st.write(f"[DEBUG] Chariklo response: {response}")  # Debug output
                 st.session_state.conversation.append({"role": "assistant", "content": response})
+                st.markdown(f"<div style='color: #b22222; font-size: 0.9em;'><b>[DEBUG]</b> Chariklo response: {response}</div>", unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Error getting response: {e}")
-                st.write(f"[DEBUG] Exception: {e}")
+                st.markdown(f"<div style='color: #b22222; font-size: 0.9em;'><b>[DEBUG]</b> Exception: {e}</div>", unsafe_allow_html=True)
         
         st.rerun()
 
