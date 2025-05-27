@@ -1,6 +1,7 @@
 import time
 import json
 import os
+import datetime
 
 class ReflectionLogger:
     def __init__(self):
@@ -8,8 +9,10 @@ class ReflectionLogger:
     
     def log_ai_reflection(self, reflection_type, content, user_prompt=None):
         """Log AI's real-time reflections during conversation"""
+        now = time.time()
         reflection_entry = {
-            'timestamp': time.time(),
+            'timestamp': now,
+            'timestamp_human': datetime.datetime.fromtimestamp(now).strftime('%Y-%m-%d %H:%M:%S'),
             'type': reflection_type,  # 'pivot', 'surprise', 'resonance', 'system_refinement'
             'content': content
         }
@@ -40,23 +43,50 @@ class ReflectionLogger:
         """Delete all session reflections (e.g., at end of session)"""
         self.session_reflections = []
     
+    def _deduplicate_entries(self, entries):
+        seen = set()
+        deduped = []
+        for obj in entries:
+            key = json.dumps({k: obj.get(k) for k in ('type','content','user_prompt')}, sort_keys=True)
+            if key not in seen:
+                seen.add(key)
+                deduped.append(obj)
+        return deduped
+    
     def save_session_log(self, filename=None):
         """Save session reflections to a JSON file. If no filename, use timestamp."""
         if not filename:
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 24-hour time with seconds
             filename = f"saved_sessions/session_{timestamp}.json"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # Add human-readable timestamp to all reflections before saving
+        for entry in self.session_reflections:
+            if 'timestamp' in entry and 'timestamp_human' not in entry:
+                entry['timestamp_human'] = datetime.datetime.fromtimestamp(entry['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+        deduped = self._deduplicate_entries(self.session_reflections)
         with open(filename, 'w') as f:
-            json.dump(self.session_reflections, f, indent=2)
+            json.dump(deduped, f, indent=2)
     
     def _save_system_suggestion(self, suggestion_entry):
         """Save system refinement suggestions to a dedicated file"""
         suggestions_file = "saved_sessions/system_suggestions.jsonl"
         os.makedirs(os.path.dirname(suggestions_file), exist_ok=True)
-        
-        # Append to JSONL file for easy reading
-        with open(suggestions_file, 'a') as f:
-            f.write(json.dumps(suggestion_entry) + '\n')
+        # Always add human-readable timestamp
+        if 'timestamp' in suggestion_entry and 'timestamp_human' not in suggestion_entry:
+            suggestion_entry['timestamp_human'] = datetime.datetime.fromtimestamp(suggestion_entry['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+        # Deduplicate existing file + new entry
+        all_entries = []
+        if os.path.exists(suggestions_file):
+            with open(suggestions_file, 'r') as f:
+                for line in f:
+                    if not line.strip() or line.strip().startswith('//'):
+                        continue
+                    all_entries.append(json.loads(line))
+        all_entries.append(suggestion_entry)
+        deduped = self._deduplicate_entries(all_entries)
+        with open(suggestions_file, 'w') as f:
+            for obj in deduped:
+                f.write(json.dumps(obj) + '\n')
     
     def get_recent_system_suggestions(self, limit=10):
         """Get recent system refinement suggestions for review"""

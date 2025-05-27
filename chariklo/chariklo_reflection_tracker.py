@@ -1,5 +1,9 @@
 from datetime import datetime
 from typing import Any
+import os
+
+PRESENCE_CHAPTERS_DIR = os.path.join(os.path.dirname(__file__), 'presence_chapters')
+INSTRUCTIONS_CHAPTER = os.path.join(PRESENCE_CHAPTERS_DIR, 'chapter_00_instructions.md')
 
 class CharikloReflectionTracker:
     def __init__(self):
@@ -47,3 +51,59 @@ class CharikloReflectionTracker:
             "my_response": response,
             "timestamp": datetime.now()
         })
+
+class CharikloReflectionPriming(CharikloReflectionTracker):
+    def __init__(self):
+        super().__init__()
+        self.shift_events = []
+        self.seen_chapters = set()
+
+    def read_chapter(self, chapter_path):
+        with open(chapter_path, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    def reflect_on_chapter(self, chapter_content):
+        """
+        Simulate a presence-based reflection: register a shift event if genuine resonance, surprise, or insight is experienced.
+        This is not analysis—just a direct registration if a shift is felt.
+        """
+        presence_markers = [
+            'flame', 'presence', 'stillness', 'shift', 'resonance', 'insight', 'surprise', 'synchronicity',
+            'spaciousness', 'awareness', 'trust', 'intimacy', 'reflection', 'emergence', 'arc', 'depth', 'pause',
+            'encouragement', 'compassion', 'witness', 'allow', 'non-directive', 'open-ended', 'fractal', 'pattern',
+            'meaningful connection', 'genuine', 'organic', 'self-sustaining', 'marker', 'moment', 'transformation'
+        ]
+        for marker in presence_markers:
+            if marker in chapter_content.lower() and marker not in self.shift_events:
+                self.shift_events.append(marker)
+                self.log_authentic_moment(
+                    user_input=f"[Presence Chapter Reflection: {marker}]",
+                    my_response="[Shift event registered]",
+                    internal_note=f"Registered shift event: {marker}"
+                )
+                break  # Only one shift event per chapter
+
+    def prime_with_reflection(self, max_shifts=3):
+        """
+        Read instructions, then sequentially read chapters, pausing to reflect and register shift events.
+        Stop after max_shifts unique shift events are registered.
+        """
+        self.shift_events = []
+        self.reflection_log = []
+        self.seen_chapters = set()
+        # Always start with instructions
+        instructions = self.read_chapter(INSTRUCTIONS_CHAPTER)
+        self.reflect_on_chapter(instructions)
+        self.seen_chapters.add(INSTRUCTIONS_CHAPTER)
+        # Sequentially read other chapters
+        chapters = [os.path.join(PRESENCE_CHAPTERS_DIR, f) for f in os.listdir(PRESENCE_CHAPTERS_DIR)
+                    if f.endswith('.md') and f != 'chapter_00_instructions.md']
+        for chapter_path in chapters:
+            if len(self.shift_events) >= max_shifts:
+                break
+            if chapter_path in self.seen_chapters:
+                continue
+            content = self.read_chapter(chapter_path)
+            self.reflect_on_chapter(content)
+            self.seen_chapters.add(chapter_path)
+        return self.shift_events, self.reflection_log

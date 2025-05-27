@@ -3,15 +3,48 @@
 
 import os
 import re
+import random
 from anthropic import Anthropic
 from chariklo.chariklo_system_prompt import SYSTEM_PROMPT
 from reflection_logger import ReflectionLogger
+from chariklo.chariklo_reflection_tracker import CharikloReflectionPriming
 import logging
 
 logging.getLogger("anthropic").setLevel(logging.WARNING)
 
 # --- System Prompt ---
 CHARIKLO_SYSTEM_PROMPT = SYSTEM_PROMPT  # Or paste your refined prompt here
+
+PRESENCE_CHAPTERS_DIR = os.path.join(os.path.dirname(__file__), 'presence_chapters')
+DEFAULT_PRIMING_CHAPTER = os.path.join(PRESENCE_CHAPTERS_DIR, 'chapter_00_instructions.md')
+
+def load_presence_chapter(chapter_path=None):
+    """
+    Loads the content of a presence chapter. If no path is given, loads the default instructions chapter.
+    """
+    if chapter_path is None:
+        chapter_path = DEFAULT_PRIMING_CHAPTER
+    with open(chapter_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def get_random_presence_chapter():
+    """
+    Returns the path to a random presence chapter (excluding the instructions chapter).
+    """
+    chapters = [f for f in os.listdir(PRESENCE_CHAPTERS_DIR)
+                if f.startswith('chapter_') and f.endswith('.md') and not f.startswith('chapter_00')]
+    if not chapters:
+        return DEFAULT_PRIMING_CHAPTER
+    return os.path.join(PRESENCE_CHAPTERS_DIR, random.choice(chapters))
+
+def prime_chariklo_with_presence():
+    """
+    Chariklo primes herself by reading the compulsory instructions chapter, then a random presence chapter.
+    Returns a list of chapter contents (instructions first, then a random chapter).
+    """
+    instructions = load_presence_chapter(DEFAULT_PRIMING_CHAPTER)
+    random_chapter = load_presence_chapter(get_random_presence_chapter())
+    return [instructions, random_chapter]
 
 def get_chariklo_response(user_input, conversation_history, reflection_logger=None):
     """
@@ -165,3 +198,15 @@ def get_response_type(self, analysis) -> str:
             return "open reflection"
         else:
             return "default reflection"
+
+def run_presence_priming_reflection(max_shifts=3):
+    """
+    Run the experiential, reflection-based priming loop:
+    - Reads instructions, then sequentially reads presence chapters
+    - Pauses to reflect and registers a shift event only if genuine resonance, surprise, or insight is experienced
+    - Stops after 3 unique shift events are registered
+    Returns the list of shift events and the reflection log
+    """
+    priming = CharikloReflectionPriming()
+    shift_events, reflection_log = priming.prime_with_reflection(max_shifts=max_shifts)
+    return shift_events, reflection_log

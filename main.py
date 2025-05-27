@@ -2,6 +2,7 @@ import streamlit as st
 import sys
 import os
 from pathlib import Path
+import random
 
 # Set page config first
 st.set_page_config(
@@ -37,37 +38,48 @@ try:
         load_dotenv()
         api_key = os.getenv("ANTHROPIC_API_KEY")
         
+        import random
         if not api_key or len(api_key) < 20:
             # No valid API key - use demo mode
             st.session_state.demo_mode = True
-            def get_chariklo_response(user_input, memory_system):
-                demo_responses = [
-                    "I'm here with you in this moment. What would you like to explore together?",
-                    "I sense you have something on your mind. Would you like to share what's arising for you?",
-                    "There's a quality of presence available right now. What are you noticing?",
-                    "I'm listening with my full attention. What feels important to explore today?",
-                    "Something is seeking your attention. What wants to be seen or understood?"
-                ]
-                import random
-                return f"💭 **Demo Mode**: {random.choice(demo_responses)}\n\n*Configure your API key to enable full Chariklo responses.*"
+            if 'get_chariklo_response' not in st.session_state:
+                st.session_state.get_chariklo_response = lambda user_input, memory_system: (
+                    "💭 **Demo Mode**: " + random.choice([
+                        "I'm here with you in this moment. What would you like to explore together?",
+                        "I sense you have something on your mind. Would you like to share what's arising for you?",
+                        "There's a quality of presence available right now. What are you noticing?",
+                        "I'm listening with my full attention. What feels important to explore today?",
+                        "Something is seeking your attention. What wants to be seen or understood?"
+                    ]) + "\n\n*Configure your API key to enable full Chariklo responses.*"
+                )
         else:
             # Try to import the real chariklo_core
             try:
-                from chariklo_core import get_chariklo_response
-                st.session_state.demo_mode = False
+                import importlib
+                chariklo_core = importlib.import_module('chariklo.chariklo_core')
+                st.session_state.get_chariklo_response = getattr(chariklo_core, 'get_chariklo_response')
+                prime_chariklo_with_presence = getattr(chariklo_core, 'prime_chariklo_with_presence', None)
+                # --- Presence Priming Step ---
+                if prime_chariklo_with_presence and 'chariklo_primed' not in st.session_state:
+                    priming_chapters = prime_chariklo_with_presence()
+                    st.session_state.chariklo_primed = True
+                    st.session_state.presence_priming = priming_chapters
             except Exception as e:
                 # If import fails, fall back to demo mode
                 st.session_state.demo_mode = True
-                def get_chariklo_response(user_input, memory_system):
+                def demo_get_chariklo_response(user_input, memory_system):
                     return f"🔧 **Connection Issue**: {str(e)}\n\nPlease check your setup and try again."
+                st.session_state.get_chariklo_response = demo_get_chariklo_response
                     
     except ImportError:
         # Complete fallback if imports fail
         st.session_state.demo_mode = True
-        def get_chariklo_response(user_input, memory_system):
+        def demo_get_chariklo_response(user_input, memory_system):
             return "I'm experiencing a connection issue. Please check your setup and try again."
+        st.session_state.get_chariklo_response = demo_get_chariklo_response
     
     from memory_system import UserControlledMemory
+    from chariklo.chariklo_core import run_presence_priming_reflection
 
     # Initialize session state
     if 'memory_system' not in st.session_state:
@@ -222,6 +234,12 @@ try:
         *Feel free to share your experience using the feedback form in the sidebar.*
         """)
 
+    # Show presence priming chapters at the top of the app (if available)
+    if st.session_state.get('presence_priming'):
+        with st.expander('🌿 Chariklo Presence Priming (click to view)', expanded=True):
+            for i, chapter in enumerate(st.session_state['presence_priming']):
+                st.markdown(f"**Priming Chapter {i+1}:**\n\n" + chapter)
+
     # Display conversation
     for i, message in enumerate(st.session_state.conversation):
         if message["role"] == "user":
@@ -275,7 +293,7 @@ try:
             
             # Get Chariklo response
             try:
-                response = get_chariklo_response(user_input, st.session_state.memory_system)
+                response = st.session_state.get_chariklo_response(user_input, st.session_state.memory_system)
                 st.session_state.conversation.append({"role": "assistant", "content": response})
             except Exception as e:
                 st.error(f"Error getting response: {e}")
@@ -304,6 +322,15 @@ try:
                     conversation_snippet, "User marked as important"
                 )
                 st.success("✨ Moment saved to memory")
+                
+    # Run presence-based priming/reflection at session start
+    shift_events, reflection_log = run_presence_priming_reflection(max_shifts=3)
+    print("\n--- Chariklo Presence Priming ---")
+    print("Registered Shift Events:", shift_events)
+    print("Reflection Log:")
+    for entry in reflection_log:
+        print(f"- {entry['moment']} | {entry['context']} | {entry['timestamp']}")
+    print("--- End Priming ---\n")
                 
 except ImportError as e:
     st.error(f"Import Error: {e}")
