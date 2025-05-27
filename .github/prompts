@@ -1,4 +1,61 @@
-CHARIKLO_DEV=1 streamlit run app/streamlit_app.py
+CHARIKLO_DEV=1 streamlit run main.py
+
+streamlit run main.py
+
+To find your repository (repo) for Streamlit Cloud or GitHub:
+
+1. **If you’re using Streamlit Cloud:**
+   - Go to [https://share.streamlit.io/](https://share.streamlit.io/) and log in.
+   - On your dashboard, you’ll see a list of your deployed apps.
+   - Click on your app (e.g., chariklo-ai-mvp).
+   - In the app details, you’ll see the GitHub repository and branch it is connected to (usually shown at the top or in the settings tab).
+
+2. **If you’re using GitHub directly:**
+   - Go to [https://github.com/](https://github.com/) and log in.
+   - Click on your profile or “Your repositories.”
+   - Look for a repo named something like `Chariklo-AI-MVP` or similar.
+
+3. **From your local workspace:**
+   - In your terminal, run:
+     ```bash
+     git remote -v
+     ```
+   - This will show the URL of your remote repository (where you push/pull code).
+
+---
+
+**Summary:**  
+- Use Streamlit Cloud dashboard to see which repo is connected.
+- Use GitHub to browse your repositories.
+- Use `git remote -v` in your terminal to see your repo URL.
+
+In your terminal, run: git status
+
+This will show if you have any uncommitted changes.
+2. Commit and Push Your Latest Changes
+If you have changes, run:
+git add .
+git commit -m "Fix: Hide presence priming, unify entry point, and update chat responsiveness"
+git push
+This will push your latest code to your remote repository.
+3. Redeploy on Streamlit Cloud
+Go to your Streamlit Cloud dashboard.
+Make sure the entry point is set to main.py (starred).
+Click “Redeploy” or “Restart” to pull the latest code and restart the app.
+4. Verify the App
+Open your app URL (e.g., chariklo-ai.streamlit.app or chariklomvp.streamlit.app).
+
+✅ Chariklo Entry Point Alignment (Completed)
+ main.py is the sole canonical entry point
+
+ All Streamlit logic has been migrated from streamlit_app.py to main.py
+
+ Presence priming logic is contained and hidden from user view
+
+ streamlit_app.py is safely archived (blank)
+
+ Launch command uses main.py only
+"Chariklo uses Streamlit. Our entry point is presence-tested. Please do not introduce a new entry file unless absolutely necessary. If main.py is required, ensure it fully replicates the Streamlit input and response logic from streamlit_app.py, and keep all presence priming internal and invisible to the user."
 
 Create new folder: mkdir documentation (eg- documentation is the name of the new folder)
 

@@ -67,16 +67,16 @@ try:
             except Exception as e:
                 # If import fails, fall back to demo mode
                 st.session_state.demo_mode = True
-                def demo_get_chariklo_response(user_input, memory_system):
-                    return f"🔧 **Connection Issue**: {str(e)}\n\nPlease check your setup and try again."
-                st.session_state.get_chariklo_response = demo_get_chariklo_response
+                st.session_state.get_chariklo_response = lambda user_input, memory_system: (
+                    f"🔧 **Connection Issue**: {str(e)}\n\nPlease check your setup and try again."
+                )
                     
     except ImportError:
         # Complete fallback if imports fail
         st.session_state.demo_mode = True
-        def demo_get_chariklo_response(user_input, memory_system):
-            return "I'm experiencing a connection issue. Please check your setup and try again."
-        st.session_state.get_chariklo_response = demo_get_chariklo_response
+        st.session_state.get_chariklo_response = lambda user_input, memory_system: (
+            "I'm experiencing a connection issue. Please check your setup and try again."
+        )
     
     from memory_system import UserControlledMemory
     from chariklo.chariklo_core import run_presence_priming_reflection
@@ -234,12 +234,6 @@ try:
         *Feel free to share your experience using the feedback form in the sidebar.*
         """)
 
-    # Show presence priming chapters at the top of the app (if available)
-    if st.session_state.get('presence_priming'):
-        with st.expander('🌿 Chariklo Presence Priming (click to view)', expanded=True):
-            for i, chapter in enumerate(st.session_state['presence_priming']):
-                st.markdown(f"**Priming Chapter {i+1}:**\n\n" + chapter)
-
     # Display conversation
     for i, message in enumerate(st.session_state.conversation):
         if message["role"] == "user":
@@ -322,15 +316,6 @@ try:
                     conversation_snippet, "User marked as important"
                 )
                 st.success("✨ Moment saved to memory")
-                
-    # Run presence-based priming/reflection at session start
-    shift_events, reflection_log = run_presence_priming_reflection(max_shifts=3)
-    print("\n--- Chariklo Presence Priming ---")
-    print("Registered Shift Events:", shift_events)
-    print("Reflection Log:")
-    for entry in reflection_log:
-        print(f"- {entry['moment']} | {entry['context']} | {entry['timestamp']}")
-    print("--- End Priming ---\n")
                 
 except ImportError as e:
     st.error(f"Import Error: {e}")

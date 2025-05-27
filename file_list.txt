@@ -20,7 +20,7 @@ file_list.txt
 requirements.txt
 saved_sessions
 streamlit_app.md
-streamlit_app.py
+main.py
 test_api.py
 test_chariklo.py
 test_env.py

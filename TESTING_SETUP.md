@@ -26,7 +26,7 @@
 
 4. Run Chariklo:
    ```bash
-   streamlit run app/streamlit_app.py
+   streamlit run main.py
    ```
 
 ## What to Test
