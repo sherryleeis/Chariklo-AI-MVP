@@ -287,12 +287,14 @@ try:
             
             # Get Chariklo response
             try:
-                response = st.session_state.get_chariklo_response(user_input, st.session_state.memory_system)
+                conversation_history = getattr(st.session_state.memory_system, "session_memory", [])
+                # Ensure at least one message is present (the current user input)
+                if not conversation_history or conversation_history[-1]["content"] != user_input:
+                    conversation_history = conversation_history + [{"role": "user", "content": user_input}]
+                response = st.session_state.get_chariklo_response(user_input, conversation_history)
                 st.session_state.conversation.append({"role": "assistant", "content": response})
-                st.markdown(f"<div style='color: #b22222; font-size: 0.9em;'><b>[DEBUG]</b> Chariklo response: {response}</div>", unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Error getting response: {e}")
-                st.markdown(f"<div style='color: #b22222; font-size: 0.9em;'><b>[DEBUG]</b> Exception: {e}</div>", unsafe_allow_html=True)
         
         st.rerun()
 
