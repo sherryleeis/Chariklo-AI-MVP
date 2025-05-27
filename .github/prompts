@@ -35,7 +35,7 @@ This will show if you have any uncommitted changes.
 2. Commit and Push Your Latest Changes
 If you have changes, run:
 git add .
-git commit -m "Fix: Hide presence priming, unify entry point, and update chat responsiveness"
+git commit -m "describe latest changes"
 git push
 This will push your latest code to your remote repository.
 3. Redeploy on Streamlit Cloud

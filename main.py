@@ -288,10 +288,12 @@ try:
             # Get Chariklo response
             try:
                 response = st.session_state.get_chariklo_response(user_input, st.session_state.memory_system)
+                st.write(f"[DEBUG] Chariklo response: {response}")  # Debug output
                 st.session_state.conversation.append({"role": "assistant", "content": response})
             except Exception as e:
                 st.error(f"Error getting response: {e}")
-                
+                st.write(f"[DEBUG] Exception: {e}")
+        
         st.rerun()
 
     # Mark important button
