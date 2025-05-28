@@ -164,6 +164,19 @@ if st.session_state.consent_given and st.session_state.interaction_log:
             mime="text/plain"
         )
 
+# 💾 Manual Save Option (even if consent was not given at start)
+if st.session_state.interaction_log:
+    with st.expander("⬇️ Manual Save Conversation (TXT)", expanded=False):
+        st.download_button(
+            label="Download as TXT (Manual Save)",
+            data="\n\n".join(
+                f"You: {entry['user']}\nChariklo: {entry['chariklo']}"
+                for entry in st.session_state.interaction_log
+            ),
+            file_name="chariklo_transcript_manual.txt",
+            mime="text/plain"
+        )
+
 # Auto-save
 if st.session_state.consent_given and st.session_state.interaction_log:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
