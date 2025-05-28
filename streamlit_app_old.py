@@ -8,6 +8,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+import chariklo_option_palette
 
 st.title("🌿 Chariklo Test App is Running")
 
@@ -75,6 +76,14 @@ if not st.session_state.onboarding_complete:
 # ✅ Load Chariklo
 load_dotenv()
 chariklo = CharikloCore()
+
+# Option Palette and Tone Archive Display
+with st.expander("🎨 Option Palette & Tone Archive (for inspiration)", expanded=True):
+    palette = chariklo_option_palette.get_chariklo_option_palette()
+    st.markdown("#### Option Palette (Response Inspiration)")
+    st.json({k: v for k, v in palette.items() if k != 'tone_archive'})
+    st.markdown("#### Tone Archive (All Fragments)")
+    st.json(palette.get('tone_archive', []))
 
 # 🌿 Process Input + Defer Analysis to Next Cycle
 if user_input := st.chat_input("What's on your mind?"):
