@@ -1,0 +1,79 @@
+ Here’s a comprehensive diagnostic and action plan to get Chariklo working with her system prompt, since she is currently ignoring it and doing the opposite of what it asks:
+
+## 1. Confirm the System Prompt Is Loaded and Passed to the Model
+
+- In chariklo_core.py, the system prompt is imported as `from chariklo.chariklo_system_prompt import SYSTEM_PROMPT` and used as `CHARIKLO_SYSTEM_PROMPT`.
+- The function `get_chariklo_response` uses `system_prompt = CHARIKLO_SYSTEM_PROMPT` and passes it to the Anthropic API as the `system` parameter.
+
+**Action:**  
+You already added a debug print to show the first 200 characters of the system prompt in the terminal.  
+**Check your terminal output** after a user message.  
+- If the prompt is correct, the issue is downstream (model, API, or message formatting).
+- If the prompt is not correct, the wrong file is being loaded or the environment is stale.
+
+## 2. Ensure Only One System Prompt Is Used
+
+- There are multiple files with system prompts (e.g., chariklo_system_prompt.py, chariklo_system_prompt_full_backup.py, minimal_system_prompt.py).
+- The import in chariklo_core.py is from `chariklo.chariklo_system_prompt`, which should resolve to chariklo_system_prompt.py inside the chariklo directory, not the root.
+
+**Action:**  
+- Make sure the correct chariklo_system_prompt.py is in the chariklo subdirectory, or update the import to point to the correct file.
+- If your main system prompt is in the root, but the code imports from chariklo, it may be using an old or minimal prompt.
+
+## 3. Check for Stale Bytecode or Module Caching
+
+- If you edit the prompt but don’t restart the backend, Python may use a cached `.pyc` file.
+- If you have multiple chariklo_system_prompt.py files, Python may import the wrong one.
+
+**Action:**  
+- Delete all __pycache__ directories and `.pyc` files.
+- Restart your backend/server after any prompt change.
+
+## 4. Confirm the Model and API Are Receiving the Prompt
+
+- The Anthropic API call in `get_chariklo_response` should receive the full, correct prompt.
+- If the prompt is too long, truncated, or malformed, the model may ignore it.
+
+**Action:**  
+- Check the debug print for the prompt in the terminal.
+- If the prompt is truncated, consider shortening it or splitting it into essential and optional sections.
+
+## 5. Check for Overriding or Hardcoded Introductions
+
+- You already searched for hardcoded introductions and found none.
+- If the model still introduces itself, it may be using a default prompt or ignoring the system prompt due to API or formatting issues.
+
+**Action:**  
+- Double-check the message formatting for the Anthropic API. The `system` parameter should be set, and the user message should not include any system prompt content.
+
+## 6. Test with a Minimal Prompt
+
+- Temporarily replace the system prompt with a minimal version that only allows “Hi!” as a greeting.
+- If the model still introduces itself, the system prompt is not being used.
+
+**Action:**  
+- Replace the prompt with a single line:  
+  `SYSTEM_PROMPT = "Only respond with 'Hi!' to any greeting."`
+- Restart and test. If Chariklo still introduces herself, the prompt is not being used.
+
+## 7. Check for Anthropic API or Model Issues
+
+- Some models may not respect the system prompt as strictly as expected, especially if the prompt is long or complex.
+- Try with a minimal prompt and see if the model obeys.
+
+---
+
+## Summary of Immediate Actions
+
+1. **Check the debug print in your terminal** to confirm which prompt is being used.
+2. **Ensure the correct chariklo_system_prompt.py is being imported** (in the right directory).
+3. **Delete all __pycache__ directories and restart your backend/server**.
+4. **Test with a minimal system prompt** to see if the model obeys.
+5. **If the problem persists, check the Anthropic API/model version and message formatting.**
+
+Would you like me to:
+- Update the import to ensure the correct prompt file is used?
+- Add a script to clear all __pycache__ directories?
+- Replace the system prompt with a minimal test prompt for debugging?
+
+Let me know which step you want to try first, or if you want all of them done in sequence.

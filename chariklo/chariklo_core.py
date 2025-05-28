@@ -59,9 +59,14 @@ def get_chariklo_response(user_input, conversation_history, reflection_logger=No
     if not api_key:
         raise ValueError("❌ ERROR: Anthropic API Key not found. Check your .env file!")
     client = Anthropic(api_key=api_key)
-    
+
     # Prepare system prompt with self-awareness context if reflection logger available
     system_prompt = CHARIKLO_SYSTEM_PROMPT
+    # --- DEBUG: Print the first 200 chars of the system prompt to the terminal ---
+    print("[Chariklo DEBUG] System prompt in use (first 200 chars):\n" + system_prompt[:200])
+    # If the system prompt is suspiciously short, return a user-friendly error
+    if len(system_prompt.strip()) < 100:
+        return "Chariklo is experiencing some technical issues right now, please come back later!"
     if reflection_logger:
         discernment_data = reflection_logger.get_ai_discernment_data()
         # Add self-awareness context to help Chariklo make informed decisions

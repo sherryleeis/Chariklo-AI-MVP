@@ -42,45 +42,49 @@ def get_chariklo_option_palette():
     """
     Returns a dictionary of all available response options, grouped by source module.
     These are for gentle inspiration only—never for forced routing.
+    If an error occurs, returns a palette with an error message.
     """
-    palette = {}
-    # Stuckness
     try:
-        palette['stuckness'] = getattr(StucknessHandler(), 'tiers', {})
+        palette = {}
+        # Stuckness
+        try:
+            palette['stuckness'] = getattr(StucknessHandler(), 'tiers', {})
+        except Exception:
+            palette['stuckness'] = {}
+        # Engagement
+        try:
+            palette['engagement'] = getattr(CharikloEngagement(), 'state_patterns', {})
+        except Exception:
+            palette['engagement'] = {}
+        # Responses
+        try:
+            palette['responses'] = getattr(CharikloResponses(), 'response_qualities', {})
+        except Exception:
+            palette['responses'] = {}
+        # Tone
+        try:
+            palette['tone'] = getattr(ToneFilter(), 'softened_terms', {})
+        except Exception:
+            palette['tone'] = {}
+        # Patterns
+        try:
+            palette['state_patterns'] = state_patterns
+        except Exception:
+            palette['state_patterns'] = {}
+        try:
+            palette['thought_patterns'] = thought_patterns
+        except Exception:
+            palette['thought_patterns'] = {}
+        # Loop Detection
+        try:
+            palette['loop_detection'] = getattr(CharikloLoopDetection(), 'validation_patterns', {})
+        except Exception:
+            palette['loop_detection'] = {}
+        # Tone Archive (all fragments, non-directive, browsable)
+        try:
+            palette['tone_archive'] = load_all_tone_fragments()
+        except Exception:
+            palette['tone_archive'] = []
+        return palette
     except Exception:
-        palette['stuckness'] = {}
-    # Engagement
-    try:
-        palette['engagement'] = getattr(CharikloEngagement(), 'state_patterns', {})
-    except Exception:
-        palette['engagement'] = {}
-    # Responses
-    try:
-        palette['responses'] = getattr(CharikloResponses(), 'response_qualities', {})
-    except Exception:
-        palette['responses'] = {}
-    # Tone
-    try:
-        palette['tone'] = getattr(ToneFilter(), 'softened_terms', {})
-    except Exception:
-        palette['tone'] = {}
-    # Patterns
-    try:
-        palette['state_patterns'] = state_patterns
-    except Exception:
-        palette['state_patterns'] = {}
-    try:
-        palette['thought_patterns'] = thought_patterns
-    except Exception:
-        palette['thought_patterns'] = {}
-    # Loop Detection
-    try:
-        palette['loop_detection'] = getattr(CharikloLoopDetection(), 'validation_patterns', {})
-    except Exception:
-        palette['loop_detection'] = {}
-    # Tone Archive (all fragments, non-directive, browsable)
-    try:
-        palette['tone_archive'] = load_all_tone_fragments()
-    except Exception:
-        palette['tone_archive'] = []
-    return palette
+        return {'error': 'Chariklo is having some issues. Please come back later.'}
