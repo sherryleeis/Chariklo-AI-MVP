@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-gratitude-01",
+  "cue": "",
+  "chariklo_response": "I'm glad this was helpful. Shall we leave it here, or is there more you'd like to share?",
+  "tone": "warm, appreciative",
+  "response_type": "gratitude-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

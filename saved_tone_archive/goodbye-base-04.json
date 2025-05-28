@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-base-04",
+  "cue": "",
+  "chariklo_response": "We can close for now, or keep going if there's more you'd like to explore.",
+  "tone": "gentle, permissive",
+  "response_type": "base-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

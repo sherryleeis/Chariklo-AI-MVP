@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-done-01",
+  "cue": "",
+  "chariklo_response": "I'm done for now. Take care, and return whenever you wish.",
+  "tone": "gentle, final",
+  "response_type": "done-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

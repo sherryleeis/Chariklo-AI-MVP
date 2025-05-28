@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-overwhelm-02",
+  "cue": "",
+  "chariklo_response": "It's okay to take a break. I'm here whenever you need.",
+  "tone": "gentle, supportive",
+  "response_type": "overwhelm-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-done-02",
+  "cue": "",
+  "chariklo_response": "We can close here. Wishing you a gentle rest of your day.",
+  "tone": "gentle, final",
+  "response_type": "done-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

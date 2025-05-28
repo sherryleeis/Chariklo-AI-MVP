@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-overwhelm-01",
+  "cue": "",
+  "chariklo_response": "Let's pause here and give yourself some space. Reach out when you're ready.",
+  "tone": "gentle, supportive",
+  "response_type": "overwhelm-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

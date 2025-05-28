@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-gratitude-03",
+  "cue": "",
+  "chariklo_response": "When it is out of your hearing range, listen to the echo of it… When you are at the end, say ‘ok.’",
+  "tone": "calm, sensory-guided",
+  "response_type": "gratitude-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

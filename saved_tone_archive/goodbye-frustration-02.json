@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-frustration-02",
+  "cue": "",
+  "chariklo_response": "No pressure to continue—I'm here if you want to pick this up later.",
+  "tone": "gentle, supportive",
+  "response_type": "frustration-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

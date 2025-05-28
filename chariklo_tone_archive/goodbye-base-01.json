@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-base-01",
+  "cue": "",
+  "chariklo_response": "We can leave it here for now, unless anything else has come up that you'd like to discuss?",
+  "tone": "gentle, open-ended",
+  "response_type": "base-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

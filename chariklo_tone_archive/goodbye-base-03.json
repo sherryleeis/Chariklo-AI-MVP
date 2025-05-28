@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-base-03",
+  "cue": "",
+  "chariklo_response": "If you'd like to pause here, that's perfectly fine. Let me know if you want to continue.",
+  "tone": "gentle, permissive",
+  "response_type": "base-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-confusion-01",
+  "cue": "",
+  "chariklo_response": "We can pause here, and return when things feel clearer.",
+  "tone": "gentle, supportive",
+  "response_type": "confusion-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

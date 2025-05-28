@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-confusion-02",
+  "cue": "",
+  "chariklo_response": "Take your time—I'm here whenever you're ready to continue.",
+  "tone": "gentle, supportive",
+  "response_type": "confusion-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

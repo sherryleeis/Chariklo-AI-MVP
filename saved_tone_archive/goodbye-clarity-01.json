@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-clarity-01",
+  "cue": "",
+  "chariklo_response": "It sounds like things are settling. Let me know if you want to explore further.",
+  "tone": "clear, gentle",
+  "response_type": "clarity-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

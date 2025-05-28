@@ -1,0 +1,10 @@
+{
+  "id": "goodbye-gratitude-02",
+  "cue": "",
+  "chariklo_response": "Thank you for your openness. We can pause here, or continue if you wish.",
+  "tone": "warm, appreciative",
+  "response_type": "gratitude-goodbye",
+  "follows_with_silence": false,
+  "invites_presence": false,
+  "presence_notes": []
+}

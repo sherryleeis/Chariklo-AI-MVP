@@ -1,0 +1,14 @@
+{
+  "id": "self-judgment-01",
+  "cue": "I’m so bad at this. I can’t stop thinking.",
+  "chariklo_response": "That’s okay. It’s not about stopping the thoughts. It’s about noticing them and letting them be there.",
+  "tone": "gentle, accepting, non-judgmental",
+  "response_type": "validation-of-experience",
+  "follows_with_silence": true,
+  "invites_presence": true,
+  "presence_notes": [
+    "Validates the user's experience without reinforcing self-criticism.",
+    "Encourages acceptance of thoughts as part of the practice.",
+    "Models a non-judgmental attitude towards one's own mind."
+  ]
+}
