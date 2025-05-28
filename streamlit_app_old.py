@@ -135,19 +135,45 @@ if st.button("Play the bell manually"):
 st.markdown("### Conversation")
 
 for i, entry in enumerate(st.session_state.interaction_log):
+    show_feedback = st.session_state.consent_given is True  # Only show if user consented
     st.markdown(f"**You:** {entry['user']}", unsafe_allow_html=True)
     st.markdown(f"**Chariklo:** {entry['chariklo']}", unsafe_allow_html=True)
 
-    feedback_col1, feedback_col2, _ = st.columns([1, 1, 6])
-    with feedback_col1:
-        if st.button("👍", key=f"thumbs_up_{i}"):
-            st.session_state.interaction_log[i]["feedback"] = "positive"
-            st.success("Thank you. If you'd like to share what felt clear or helpful, you're welcome to.")
+    if show_feedback:
+        feedback_col1, feedback_col2, _ = st.columns([1, 1, 6])
+        with feedback_col1:
+            if st.button("", key=f"thumbs_up_{i}", help="Mark this response as helpful 👍"):
+                st.session_state.interaction_log[i]["feedback"] = "positive"
+                # Save feedback to file
+                feedback_folder = Path("feedback")
+                feedback_folder.mkdir(exist_ok=True)
+                feedback_data = {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "thumbs_up",
+                    "user": entry['user'],
+                    "chariklo": entry['chariklo'],
+                    "session": st.session_state.get('session_id', None)
+                }
+                with open(feedback_folder / f"feedback_{datetime.now().strftime('%Y%m%d-%H%M%S')}_{i}.json", "w") as f:
+                    json.dump(feedback_data, f, indent=2, ensure_ascii=False)
+                st.success("Thank you. If you'd like to share what felt clear or helpful, you're welcome to.")
 
-    with feedback_col2:
-        if st.button("👎", key=f"thumbs_down_{i}"):
-            st.session_state.interaction_log[i]["feedback"] = "negative"
-            st.warning("Thank you for helping me figure this out. If you can offer any advice on how it could have worked better, it will help with future updates.")
+        with feedback_col2:
+            if st.button("", key=f"thumbs_down_{i}", help="Mark this response as not helpful 👎"):
+                st.session_state.interaction_log[i]["feedback"] = "negative"
+                # Save feedback to file
+                feedback_folder = Path("feedback")
+                feedback_folder.mkdir(exist_ok=True)
+                feedback_data = {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "thumbs_down",
+                    "user": entry['user'],
+                    "chariklo": entry['chariklo'],
+                    "session": st.session_state.get('session_id', None)
+                }
+                with open(feedback_folder / f"feedback_{datetime.now().strftime('%Y%m%d-%H%M%S')}_{i}.json", "w") as f:
+                    json.dump(feedback_data, f, indent=2, ensure_ascii=False)
+                st.warning("Thank you for helping me figure this out. If you can offer any advice on how it could have worked better, it will help with future updates.")
 
     st.markdown("---")
 
@@ -182,9 +208,31 @@ if st.session_state.consent_given and st.session_state.interaction_log:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     folder = Path("saved_sessions")
     folder.mkdir(exist_ok=True)
-    filename = folder / f"session_{timestamp}.txt"
+    filename_txt = folder / f"session_{timestamp}.txt"
+    filename_json = folder / f"session_{timestamp}.json"
 
-    with open(filename, "w") as f:
+    from chariklo.chariklo_core import run_presence_priming_reflection
+    shift_events, reflection_log = run_presence_priming_reflection()
+
+    # Save TXT with YAML block
+    with open(filename_txt, "w") as f:
+        f.write("# --- Presence Priming Log ---\n\n")
+        f.write("primed_on:\n")
+        for chapter in shift_events:
+            f.write(f"  - {chapter}\n")
+        f.write("\nresonance_log:\n")
+        for entry in reflection_log:
+            f.write(f"  - \"{entry}\"\n")
+        f.write("\n# ----------------------------\n\n")
         for entry in st.session_state.interaction_log:
             f.write(f"You: {entry['user']}\n")
             f.write(f"Chariklo: {entry['chariklo']}\n\n")
+
+    # Save JSON with priming_log at top level
+    session_json = {
+        "primed_on": shift_events,
+        "resonance_log": reflection_log,
+        "interaction_log": st.session_state.interaction_log
+    }
+    with open(filename_json, "w") as f_json:
+        json.dump(session_json, f_json, indent=2, ensure_ascii=False)
